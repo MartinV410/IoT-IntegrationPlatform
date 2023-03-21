@@ -1,0 +1,7 @@
+/dj/IntegrationPlatform/Bluetooth/migrations/
+/dj/IntegrationPlatform/control/migrations/
+/dj/IntegrationPlatform/dmx/migrations/
+/dj/IntegrationPlatform/NBIoT/migrations/
+/dj/IntegrationPlatform/OneWire/migrations/
+.idea
+/dj/IntegrationPlatform/db.sqlite3
