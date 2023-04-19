@@ -1,6 +1,6 @@
 # HANDLERS
 from .handler import Handler
-from .protocol_handler import ProtocolHandler
+#from .protocol_handler import ProtocolHandler
 from .protocol_handler_1wire import ProtocolHandler1Wire
 from .protocol_handler_bluetooth import ProtocolHandlerBluetooth
 from .protocol_handler_nbiot import ProtocolHandlerNBIoT

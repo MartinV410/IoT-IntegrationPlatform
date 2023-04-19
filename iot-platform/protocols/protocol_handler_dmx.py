@@ -3,6 +3,7 @@ from utils import ResultDMX
 # from .protocol_handler import ProtocolHandler
 from .handler import Handler
 from configs import ConfigDMX
+import serial, logging
 from PyDMXControl.controllers import SerialController
 from PyDMXControl.profiles.Generic import RGB_Vdim
 from PyDMXControl.profiles.defaults import Fixture
@@ -11,7 +12,12 @@ from PyDMXControl.profiles.defaults import Fixture
 class ProtocolHandlerDMX(Handler):
     def __init__(self, config: ConfigDMX) -> None:
         super().__init__("DMX", config)
-        self.__dmx = SerialController(config.serial_port)
+
+        try:
+            self.__dmx = SerialController(config.serial_port)
+        except (serial.serialutil.SerialException, BrokenPipeError) as e:
+            logging.critical(f"Manager for DMX cannot be started: {e}")
+
 
     def close(self) -> None:
         self.__dmx.close()
@@ -130,19 +136,19 @@ class ProtocolHandlerDMX(Handler):
         fixture = self.__dmx.get_fixture(fixture_id)
         if not fixture: return ResultDMX[bool](data=False, message=f"No fixture with id '{fixture_id}' found!")
         fixture.locate()
-        ResultDMX[bool](passed=True, data=True, message=f"Fixture '{fixture_id}' located")
+        return ResultDMX[bool](passed=True, data=True, message=f"Fixture '{fixture_id}' located")
 
     def fixture_on(self, fixture_id: int) -> ResultDMX[bool]:
         fixture = self.__dmx.get_fixture(fixture_id)
         if not fixture: return ResultDMX[bool](data=False, message=f"No fixture with id '{fixture_id}' found!")
         fixture.on()
-        ResultDMX[bool](passed=True, data=True, message=f"Fixture '{fixture_id}' turned on")
+        return ResultDMX[bool](passed=True, data=True, message=f"Fixture '{fixture_id}' turned on")
 
     def fixture_off(self, fixture_id: int) -> ResultDMX[bool]:
         fixture = self.__dmx.get_fixture(fixture_id)
         if not fixture: return ResultDMX[bool](data=False, message=f"No fixture with id '{fixture_id}' found!")
         fixture.off()
-        ResultDMX[bool](passed=True, data=True, message=f"Fixture '{fixture_id}' turned off")
+        return ResultDMX[bool](passed=True, data=True, message=f"Fixture '{fixture_id}' turned off")
 
     def fixture_dim(self, fixture_id: int, value: int) -> ResultDMX[bool]:
         fixture = self.__dmx.get_fixture(fixture_id)
@@ -151,7 +157,7 @@ class ProtocolHandlerDMX(Handler):
         range_r = self.__check_range(value)
         if not range_r.passed: return range_r
         fixture.dim(target_value=value)
-        ResultDMX[bool](passed=True, data=True, message=f"Fixture '{fixture_id}' dimmed to '{value}'")
+        return ResultDMX[bool](passed=True, data=True, message=f"Fixture '{fixture_id}' dimmed to '{value}'")
 
     def fixture_color_set(self, fixture_id: int, red: int, green: int, blue: int) -> ResultDMX[bool]:
         fixture = self.__dmx.get_fixture(fixture_id)
@@ -161,14 +167,14 @@ class ProtocolHandlerDMX(Handler):
         range_r = self.__check_range_list(colors)
         if not range_r.passed: return range_r
         fixture.color(color=colors)
-        ResultDMX[bool](passed=True, data=True, message=f"Fixture'{fixture_id}' changed color to {colors}")
+        return ResultDMX[bool](passed=True, data=True, message=f"Fixture'{fixture_id}' changed color to {colors}")
 
     def fixture_color_get(self, fixture_id: int) -> ResultDMX[List[int]]:
         fixture = self.__dmx.get_fixture(fixture_id)
         if not fixture: return ResultDMX[List[int]](data=[], message=f"No fixture '{fixture_id}' found!")
 
         colors = fixture.get_color()
-        ResultDMX[List[int]](passed=True, data=colors, message=f"Fixture '{fixture_id}' color")
+        return ResultDMX[List[int]](passed=True, data=colors, message=f"Fixture '{fixture_id}' color")
 
     def fixture_channels(self, fixture_id: int) -> ResultDMX[Dict[int, Dict]]:
         fixture = self.__dmx.get_fixture(fixture_id)

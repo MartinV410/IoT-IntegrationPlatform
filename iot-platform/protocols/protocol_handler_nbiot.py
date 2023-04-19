@@ -103,7 +103,7 @@ class ProtocolHandlerNBIoT(Handler):
         Returns:
             list[str]: cleaned AT command list
         """
-        cleaned = List[str]()
+        cleaned = list()
         for data in lst:
             if data != "" and data != "OK":
                 cleaned.append(data)
@@ -152,7 +152,7 @@ class ProtocolHandlerNBIoT(Handler):
         Returns:
             ResultNBIoT[dict[str, list[str]]]: Result with key: name format result
         """
-        info = Dict[str, str]()
+        info = dict()
 
         result = self.send_multiple_at(commands=commands)
         if not result.passed:
@@ -172,7 +172,7 @@ class ProtocolHandlerNBIoT(Handler):
         Returns:
             ResultNBIoT[dict[str, list[str]]]: Result with list of commands results
         """
-        results = Dict[str, List[str]]()
+        results = dict()
 
         for command in commands:
             result = self.__send_and_receive(command=command)

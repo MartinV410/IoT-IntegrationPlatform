@@ -38,8 +38,8 @@ class ActionBluetoothDiscoverDevices(Action[ResultBluetooth[list[dict]]]):
             data_type=list[dict],
             allowed_args={
                 "duration": ActionAgrument(arg_type=int, description="Duration of discovery in seconds"),
-                "lookup_names": ActionAgrument(arg_type=bool, description="If names should be included during discovery"),
-                "lookup_class": ActionAgrument(arg_type=bool, description="If class should be included during discovery")
+                "lookup_names": ActionAgrument(arg_type=bool, optional=True, description="If names should be included during discovery"),
+                "lookup_class": ActionAgrument(arg_type=bool, optional=True, description="If class should be included during discovery")
             },
             description="Discover all available devices" 
         )

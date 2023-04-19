@@ -13,7 +13,7 @@ class ProtocolHandler1Wire(Handler):
     def __init__(self, config: Config1Wire) -> None:
         super().__init__("1-wire", config)
         self.__1w = Pi1Wire()
-        self.__available = List[OneWireInterface]()
+        self.__available = list()
         self.__current_resolution = Resolution.X0_5
 
     def close(self) -> None:
@@ -24,7 +24,7 @@ class ProtocolHandler1Wire(Handler):
         Finds all available sensors and stores them. Check for errors in case some sensor is not valid
         """
         all_sensors = self.__1w.find_all_sensors()
-        available = List[OneWireInterface]()
+        available = list()
 
         for sensor in all_sensors:
             try:
