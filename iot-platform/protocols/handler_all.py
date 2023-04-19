@@ -13,7 +13,7 @@ from actions.actions_dmx import actions_dmx
 # RESULTS
 from utils import Result1Wire, ResultBluetooth, ResultNBIoT,ResultDMX, Result
 # CONFIGS
-from configs import Config1Wire, ConfigBluetooth, ConfigNBIoT, ConfigDMX, Config
+from configs import Config1Wire, ConfigBluetooth, ConfigNBIoT, ConfigDMX, Config, ConfigControl
 # MANAGERS
 from managers.manager_config import ManagerConfig
 from managers.manager_handler import ManagerHandler
@@ -30,7 +30,9 @@ from multiprocessing import Event
 import logging
 from typing import Any, Dict, List
 from dataclasses import dataclass, field
-import datetime
+import datetime, time
+
+DEFAULT_PORT = 50000
 
 
 @dataclass
@@ -82,7 +84,6 @@ class HandlerWrapper:
 class HandlerAll:
     def __init__(self) -> None:
         self.__manager_config = ManagerConfig("config.ini")
-        self.__manager_zmq_rep = ManagerZmqRep(5000, Result)
 
         from actions.actions_handler_all import actions_handler  # To prevent circular import
         self.__manager_actions = ManagerActions(actions_handler, Result)
@@ -277,31 +278,39 @@ class HandlerAll:
 
         # START PROTOCOLS MANAGERS
         conf_r = self.__manager_config.read()
+        zmq_rep = ManagerZmqRep
         if conf_r.passed:
+            config = self.__manager_config.get_config(ConfigControl, "Control").data
+            logging.info(f"Main handler using port {config.zmq_port} for control")
+            zmq_rep = ManagerZmqRep(config.zmq_port, Result)
+
             self.start_protocols(startup=True)  # start all protocols (if autostart is on)
             self.__prepare_api_layers()  # prepare api layers before running them
             self.start_api_layers(startup=True)
         else:
             logging.critical(conf_r.message)
+            zmq_rep = ManagerZmqRep(DEFAULT_PORT, Result)
+            logging.info(f"Main handler using default port {DEFAULT_PORT} for control")
 
         self.__running = True
         while self.__running:
-            message_r = self.__manager_zmq_rep.receive()
+            message_r = zmq_rep.receive()
 
             # CHECK IF MESSAGE WAS RECEIVED
             if not message_r.passed:  
                 if not message_r.error:  # if timeout occured
                     continue
                 # when message is not json serializable or another unexpected error occured
-                self.__manager_zmq_rep.respond([message_r])
+                zmq_rep.respond([message_r])
                 continue
 
             actions_r = self.__manager_actions.manage_actions(message_r.data, self)
-            self.__manager_zmq_rep.respond(actions_r)
+            zmq_rep.respond(actions_r)
 
         # CLEANUP
         logging.info("Stopping main handler")
-        self.__manager_zmq_rep.close()
+        zmq_rep.close()
+        self.stop_api_layers()
         self.stop_protocols()
         logging.info("Main handler stopped")
 

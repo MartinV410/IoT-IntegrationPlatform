@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+@dataclass
+class ConfigControl:
+    zmq_port: int
 
 @dataclass
 class Config:

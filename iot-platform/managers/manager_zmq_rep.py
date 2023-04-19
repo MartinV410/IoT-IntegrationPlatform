@@ -20,7 +20,6 @@ class ManagerZmqRep(Generic[RESULT]):
     def close(self) -> None:
         self._socket.close()
 
-
     def receive(self) -> RESULT:
 
         pool_result = self._poller.poll(timeout=1000) # TODO skusit prerobit na flag, ktory by to ukoncoval
@@ -35,7 +34,6 @@ class ManagerZmqRep(Generic[RESULT]):
         else :            
             return self._result[dict](data={}, message="No message to receive")
         
-
     def respond(self, result: list[RESULT]) -> None:
         if len(result) == 1:
             self._socket.send_string(result[0].json())
