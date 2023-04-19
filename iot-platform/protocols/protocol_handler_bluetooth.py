@@ -1,8 +1,11 @@
 from bluetooth import BluetoothError
 from enum import Enum
 import subprocess, pexpect, bluetooth, time
+
+from typing import List
 from utils import ResultBluetooth
-from .protocol_handler import ProtocolHandler, ProtocolReadable
+# from .protocol_handler import ProtocolHandler
+from .handler import HandlerReadable, Handler
 from serial_port import SerialPort
 from configs import ConfigBluetooth
 
@@ -16,11 +19,11 @@ class Switchable(Enum):
 SERIAL_PORT = "/dev/rfcomm0"
 
 
-class ProtocolHandlerBluetooth(ProtocolHandler, ProtocolReadable):
+class ProtocolHandlerBluetooth(Handler, HandlerReadable):
 
     def __init__(self, config: ConfigBluetooth) -> None:
         super().__init__("bluetooth", config)
-        #self.__socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+        # self.__socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
         self.__bt_child = pexpect.spawn("bluetoothctl")
         self.__bt_child.sendline("agent off")
         self.__bt_child.sendline("agent NoInputNoOutput")
@@ -31,9 +34,8 @@ class ProtocolHandlerBluetooth(ProtocolHandler, ProtocolReadable):
     def close(self) -> None:
         self.__serial_port.close()
         self.__bt_child.close()
-        
 
-    def services(self, addr: str) -> ResultBluetooth[list[dict]]:
+    def services(self, addr: str) -> ResultBluetooth[List[dict]]:
         """
         Displays services being advertised on a specified bluetooth device.
         Result.data (if device available and was found) has the following format:
@@ -58,17 +60,15 @@ class ProtocolHandlerBluetooth(ProtocolHandler, ProtocolReadable):
             ResultBluetooth[list[dict]]:Result with list of advertised services (empty list if device was not found)
         """
         if not self.is_on().data:
-            return ResultBluetooth[list[dict]](passed=False, data=[{}], message=f"Cannot get services of '{addr}'! Bluetooth is off.")
+            return ResultBluetooth[List[dict]](passed=False, data=[{}], message=f"Cannot get services of '{addr}'! Bluetooth is off.")
 
         try:
             services = bluetooth.find_service(address=addr)
-            return ResultBluetooth[list[dict]](passed=True,  data=services, message=f"Bluetooth services of '{addr}'")
+            return ResultBluetooth[List[dict]](passed=True, data=services, message=f"Bluetooth services of '{addr}'")
         except BluetoothError as e:
-            return ResultBluetooth[list[dict]](passed=False, data=[{}], message=f"Unexpected error while trying to get services of '{addr}'!", error=e)
+            return ResultBluetooth[List[dict]](passed=False, data=[{}], message=f"Unexpected error while trying to get services of '{addr}'!", error=e)
 
-        #return ResultBluetooth
-
-    def discover_devices(self, duration: int, lookup_names: bool = True, lookup_class: bool = True) -> ResultBluetooth[list[dict]]: # TODO replace with pexpex implementation
+    def discover_devices(self, duration: int, lookup_names: bool = True, lookup_class: bool = True) -> ResultBluetooth[List[dict]]:  # TODO replace with pexpex implementation
         """
         Discover nearby available devices.
         ResultBluetooth.data has the following format (if lookup_names and classes are set to default):
@@ -89,7 +89,7 @@ class ProtocolHandlerBluetooth(ProtocolHandler, ProtocolReadable):
             ResultBluetooth[list[dict]]:ResultBluetooth with list of discovered devices
         """
         if not self.is_on().data:
-            return ResultBluetooth[list[dict]](passed=False, data=[{}], message=f"Cannot discover devices! Bluetooth is off.")
+            return ResultBluetooth[List[dict]](passed=False, data=[{}], message=f"Cannot discover devices! Bluetooth is off.")
 
         nearby_devices = bluetooth.discover_devices(duration=duration, lookup_names=lookup_names, flush_cache=True, lookup_class=lookup_class)
 
@@ -103,7 +103,7 @@ class ProtocolHandlerBluetooth(ProtocolHandler, ProtocolReadable):
 
             data.append(temp)
 
-        return ResultBluetooth[list[dict]](passed=True, data=data, message=f"Discovered bluetooth devices")
+        return ResultBluetooth[List[dict]](passed=True, data=data, message=f"Discovered bluetooth devices")
 
     def local_addr(self) -> ResultBluetooth[str]:
         """Returns local bluetooth mac address
@@ -116,8 +116,7 @@ class ProtocolHandlerBluetooth(ProtocolHandler, ProtocolReadable):
 
         return ResultBluetooth[str](passed=True, data=bluetooth.read_local_bdaddr()[0], message=f"Local bluetooth address")
 
-
-    def __bluetoothctl_command(self, arg_list: list[str]) -> str:
+    def __bluetoothctl_command(self, arg_list: List[str]) -> str:
         cmd = ["bluetoothctl"]
         cmd.extend(arg_list)
     
@@ -139,7 +138,7 @@ class ProtocolHandlerBluetooth(ProtocolHandler, ProtocolReadable):
             return ResultBluetooth[bool](passed=True, data=True, message="New alias successfuly set.")
         return ResultBluetooth[bool](data=False, message=f"Alias could not be set!", error=out)
 
-    def paired_devices(self) -> ResultBluetooth[list[dict]]:
+    def paired_devices(self) -> ResultBluetooth[List[dict]]:
         """Returns list of all paired devices. ResultBluetooth.data has the following format:
         [
             {
@@ -164,7 +163,7 @@ class ProtocolHandlerBluetooth(ProtocolHandler, ProtocolReadable):
 
             result.append(res)
 
-        return ResultBluetooth[list[dict]](passed=True, data=result, message="List of paired bluetooth devices.")
+        return ResultBluetooth[List[dict]](passed=True, data=result, message="List of paired bluetooth devices.")
 
     def switch_function(self, function: Switchable, on: bool) -> ResultBluetooth[bool]:
         """Switch given functionality of bluetooth (for example discoverable, pairable...)

@@ -1,8 +1,9 @@
 from multiprocessing import Process, Event
-from protocols.protocol_handler import ProtocolHandler, ProtocolReadable    
+# from protocols.protocol_handler import ProtocolHandler
+from protocols.handler import HandlerReadable, Handler
 from actions.action import Action
 from utils import Result
-from typing import Any, TypeVar, Generic
+from typing import Any, TypeVar, Generic, Dict
 import logging, time
 from configs import Config
 from threading import Thread, Lock
@@ -12,12 +13,12 @@ from .manager_actions import ManagerActions
 from .manager_zmq_rep import ManagerZmqRep
 from .manager_zmq_pub import ManagerZmqPub
 
-PROTO_HANDLER = TypeVar('PROTO_HANDLER', bound=ProtocolHandler)
+HANDLER = TypeVar('HANDLER', bound=Handler)
 RESULT = TypeVar('RESULT', bound=Result)
 
 
-class ManagerProtocol(Process, Generic[PROTO_HANDLER, RESULT]):
-    def __init__(self, handler: PROTO_HANDLER, actions: dict[str, Action], config: Config, stop_event: Event, result_type: RESULT, identifier: str) -> None:
+class ManagerHandler(Process, Generic[HANDLER, RESULT]):
+    def __init__(self, handler: HANDLER, actions: Dict[str, Action], config: Config, stop_event: Event, result_type: RESULT, identifier: str) -> None:
         super().__init__()
         self.daemon=True
 
@@ -32,15 +33,13 @@ class ManagerProtocol(Process, Generic[PROTO_HANDLER, RESULT]):
         self.__read_thread = Thread
         self.__lock = Lock()
 
-
     def run(self) -> None:
         logging.info(f"Starting manager for '{self.__identifier}'")
         handler = self.__handler(self.__config)
         manager_actions = ManagerActions[self.__result](self.__actions, self.__result)
         manager_zmq_rep = ManagerZmqRep[self.__result](self.__config.zmq_port, self.__result)
 
-
-        if isinstance(handler, ProtocolReadable):
+        if isinstance(handler, HandlerReadable):
             logging.info(f"Starting message publishing for '{self.__identifier}'")
             self.__read_thread = Thread(target=self.__read, args=(self.__event, handler, self.__config, self.__lock))
             self.__read_thread.setDaemon(True)
@@ -69,7 +68,7 @@ class ManagerProtocol(Process, Generic[PROTO_HANDLER, RESULT]):
         # CLEANUP
         logging.info(f"Stopping manager for '{self.__identifier}'")
 
-        if isinstance(handler, ProtocolReadable):
+        if isinstance(handler, HandlerReadable):
             logging.info(f"Stopping message publishing for '{self.__identifier}'")
             if self.__read_thread.is_alive():
                 self.__read_thread.join()
@@ -80,8 +79,7 @@ class ManagerProtocol(Process, Generic[PROTO_HANDLER, RESULT]):
 
         logging.info(f"Mmanager for '{self.__identifier}' stopped")
 
-    
-    def __read(self, stop_event: Event, handler: ProtocolReadable, config: Config, lock: Lock):
+    def __read(self, stop_event: Event, handler: HandlerReadable, config: Config, lock: Lock):
     
         manager_pub = ManagerZmqPub(config.zmq_port_pub)
         
@@ -98,10 +96,5 @@ class ManagerProtocol(Process, Generic[PROTO_HANDLER, RESULT]):
 
         manager_pub.close()
 
-
     def get_config(self) -> Config:
         return self.__config
-
-
-
-        

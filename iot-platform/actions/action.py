@@ -1,9 +1,9 @@
 from abc import abstractmethod, ABC
 from utils import Result
-from protocols.protocol_handler import ProtocolHandler
+# from protocols.protocol_handler import ProtocolHandler
 from protocols.handler import Handler
 
-from typing import Any, TypeVar, Generic, List
+from typing import Any, TypeVar, Generic, List, Dict
 
 RESULT = TypeVar('RESULT', bound=Result)
 DATA = TypeVar('DATA')
@@ -38,7 +38,7 @@ class ActionAgrument:
         
         return False
     
-    def help(self) -> dict[str, str]:
+    def help(self) -> Dict[str, str]:
         temp = dict()
         temp["type"] = self.__arg_type.__name__
         temp["optional"] = self.__optional
@@ -49,7 +49,7 @@ class ActionAgrument:
 
 class Action(Generic[RESULT]):
 
-    def __init__(self, identifier: str, description: str, result_type: RESULT, data_type=DATA, standalone: bool = False, allowed_args: dict[str, ActionAgrument] = dict()) -> None:
+    def __init__(self, identifier: str, description: str, result_type: RESULT, data_type=DATA, standalone: bool = False, allowed_args: Dict[str, ActionAgrument] = dict()) -> None:
         self._identifier = identifier
         self._standalone = standalone
         self._description = description
@@ -70,7 +70,7 @@ class Action(Generic[RESULT]):
     def standalone(self) -> bool:
         return self._standalone
     
-    def __help_args(self) -> list[dict[str, str]]:
+    def __help_args(self) -> List[Dict[str, str]]:
         temp = list()
         for key, value in self._allowed_args.items():
             temp_d = value.help()
@@ -79,8 +79,7 @@ class Action(Generic[RESULT]):
 
         return temp
 
-
-    def help(self) -> dict[str, Any]:
+    def help(self) -> Dict[str, Any]:
         temp = dict()
         temp["name"] = self._identifier
         temp["standalone"] = self._standalone
@@ -89,14 +88,12 @@ class Action(Generic[RESULT]):
 
         return temp
 
-
     def __check_int(self, number: str) -> Result[bool]:
         try:
             int(number)
             return Result[bool](passed=True, data=True, message="String is integer")
         except ValueError:
             return Result[bool](data=False, message="String is not an integer!")
-        
 
     def __check_float(self, number: str) -> Result[bool]:
         try:
@@ -104,7 +101,6 @@ class Action(Generic[RESULT]):
             return Result[bool](passed=True, data=True, message="String is float")
         except ValueError:
             return Result[bool](data=False, message="String is not an float!")
-
 
     def __check_bool(self, string: str) -> Result[bool]:
 
@@ -115,7 +111,6 @@ class Action(Generic[RESULT]):
         
         return Result[bool](data=False, message=f"Unsupported bool identifier '{string}'!", error=f"Unsupported bool identifier '{string}'! Supported only {self._accepted_true} and {self._accepted_false} or plain JSON bool object! This is not case sensitive")
 
-
     def __check_args(self, **kwargs) -> Result[bool]:
 
         for key, value in kwargs.items(): 
@@ -124,16 +119,16 @@ class Action(Generic[RESULT]):
                 return Result[bool](data=False, message=f"Unexpected argument '{key}' in action '{self._identifier}'!", error=f"Received unexpected argument '{key}' in action '{self._identifier}'!")
             if not isinstance(value, arg.arg_type()): # checks for wrong arg type (this can occur even when "10" == int or "true" == bool)
 
-                if(arg.arg_type() is int):
+                if arg.arg_type() is int:
                     int_r = self.__check_int(value)
                     if int_r.passed:
                         continue
-                if(arg.arg_type() is float):
+                if arg.arg_type() is float:
                     float_r = self.__check_float(value)
                     if float_r.passed:
                         continue
 
-                if(arg.arg_type() is bool):
+                if arg.arg_type() is bool:
                     bool_r = self.__check_bool(value)
                     if not bool_r.passed:
                         return bool_r
@@ -154,8 +149,7 @@ class Action(Generic[RESULT]):
 
         return Result[bool](passed=True, data=True, message="All arguments are correct")
 
-
-    def __retype_strs(self, **kwargs) -> Result[dict[str, Any]]:
+    def __retype_strs(self, **kwargs) -> Result[Dict[str, Any]]:
         new_kwargs = {}
         for key, value in kwargs.items(): 
             arg = self._allowed_args[key]
@@ -178,7 +172,7 @@ class Action(Generic[RESULT]):
                 
             new_kwargs[key] = value
 
-        return Result[dict[str, Any]](passed=True, data=new_kwargs, message="All kwargs retyped")
+        return Result[Dict[str, Any]](passed=True, data=new_kwargs, message="All kwargs retyped")
         
     def __check_options(self, **kwargs) -> Result[bool]:
         for key, value in kwargs.items(): 
@@ -189,11 +183,9 @@ class Action(Generic[RESULT]):
             
         return Result[bool](passed=True, data=True, message=f"All options in arguments are correct")
 
-
     @abstractmethod
     def _action(self, handler: Handler, **kwargs) -> RESULT:
         raise NotImplementedError
-
 
     def perform(self, handler: Handler, **kwargs) -> RESULT:
         result_arg = self.__check_args(**kwargs)

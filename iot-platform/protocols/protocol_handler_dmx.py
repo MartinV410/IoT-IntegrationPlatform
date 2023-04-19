@@ -1,14 +1,14 @@
 from typing import Any, Type, Dict, Union, List
 from utils import ResultDMX
-from .protocol_handler import ProtocolHandler
+# from .protocol_handler import ProtocolHandler
+from .handler import Handler
 from configs import ConfigDMX
 from PyDMXControl.controllers import SerialController
 from PyDMXControl.profiles.Generic import RGB_Vdim
 from PyDMXControl.profiles.defaults import Fixture
 
 
-
-class ProtocolHandlerDMX(ProtocolHandler):
+class ProtocolHandlerDMX(Handler):
     def __init__(self, config: ConfigDMX) -> None:
         super().__init__("DMX", config)
         self.__dmx = SerialController(config.serial_port)

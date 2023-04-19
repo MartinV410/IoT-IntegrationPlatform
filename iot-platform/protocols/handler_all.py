@@ -1,4 +1,5 @@
 # HANDLERS
+from .handler import Handler
 from .protocol_handler import ProtocolHandler
 from .protocol_handler_1wire import ProtocolHandler1Wire
 from .protocol_handler_bluetooth import ProtocolHandlerBluetooth
@@ -15,7 +16,7 @@ from utils import Result1Wire, ResultBluetooth, ResultNBIoT,ResultDMX, Result
 from configs import Config1Wire, ConfigBluetooth, ConfigNBIoT, ConfigDMX, Config
 # MANAGERS
 from managers.manager_config import ManagerConfig
-from managers.manager_protocol import ManagerProtocol
+from managers.manager_handler import ManagerHandler
 from managers.manager_actions import ManagerActions
 from managers.manager_zmq_rep import ManagerZmqRep
 # API LAYERS
@@ -31,6 +32,7 @@ from typing import Any, Dict, List
 from dataclasses import dataclass, field
 import datetime
 
+
 @dataclass
 class ApiLayerWrapper:
     identifier: str
@@ -41,16 +43,16 @@ class ApiLayerWrapper:
 
 
 @dataclass
-class ProtocolWrapper:
+class HandlerWrapper:
     identifier: str
-    handler_class: ProtocolHandler
+    handler_class: Handler
     actions: dict
     result_class: Result
     config_class: Config
     api_layers_classes: List = field(default_factory=lambda: [])
 
-    # THIS ARE ADDED AT RUNTIME!
-    manager: ManagerProtocol = None
+    # THOSE ARE ADDED AT RUNTIME!
+    manager: ManagerHandler = None
     stop_event: Event = None
     running: bool = False
     start_date: datetime.datetime = datetime.datetime.now()
@@ -82,22 +84,21 @@ class HandlerAll:
         self.__manager_config = ManagerConfig("config.ini")
         self.__manager_zmq_rep = ManagerZmqRep(5000, Result)
 
-        from actions.actions_handler_all import actions_handler # To prevent circular import
+        from actions.actions_handler_all import actions_handler  # To prevent circular import
         self.__manager_actions = ManagerActions(actions_handler, Result)
 
-        #self.__protocols = deepcopy(PROTOCOLS)
         self.__running = False
 
         # NEW PROTOCOLS MUST BE ADDED HERE TO BE PART OF THE PLATFORM
         self.__protocols = [
-            ProtocolWrapper(
+            HandlerWrapper(
                 identifier=Protocol.WIRE_1.value,
                 handler_class=ProtocolHandler1Wire,
                 actions=actions_1wire,
                 result_class=Result1Wire,
                 config_class=Config1Wire
             ),
-            ProtocolWrapper(
+            HandlerWrapper(
                 identifier=Protocol.BLUETOOTH.value,
                 handler_class=ProtocolHandlerBluetooth,
                 actions=actions_bluetooth,
@@ -105,14 +106,14 @@ class HandlerAll:
                 config_class=ConfigBluetooth,
                 api_layers_classes=[ApiLayerWs]
             ),
-            ProtocolWrapper(
+            HandlerWrapper(
                 identifier=Protocol.NB_IOT.value,
                 handler_class=ProtocolHandlerNBIoT,
                 actions=actions_nbiot,
                 result_class=ResultNBIoT,
                 config_class=ConfigNBIoT,
             ),
-            ProtocolWrapper(
+            HandlerWrapper(
                 identifier=Protocol.DMX.value,
                 handler_class=ProtocolHandlerDMX,
                 actions=actions_dmx,
@@ -120,7 +121,6 @@ class HandlerAll:
                 config_class=ConfigDMX
             ),
         ]
-
 
     def __prepare_api_layers(self) -> None:
         # Configs must be added in protocol wrappers before calling this!! 
@@ -131,7 +131,6 @@ class HandlerAll:
                 api_layer = api_layer_class(stop_event=stop_event, config=wrapper.config)
                 api_wrapper = ApiLayerWrapper(api_layer.identifier(), stop_event, api_layer, api_layer_class)
                 wrapper.api_layers.append(api_wrapper)
-
 
     def start_api_layer(self, protocol_identifier: str, api_identifier: str, startup: bool = False) -> Result[bool]:
         protocol = next((item for item in self.__protocols if item.identifier == protocol_identifier), None)
@@ -145,7 +144,7 @@ class HandlerAll:
         if api_layer.api_layer.is_alive():
             return Result[bool](data=False, message=f"Api layer '{api_identifier}' is already running!")
         
-        if api_layer.stop_event.is_set(): # reset stop event if necessary
+        if api_layer.stop_event.is_set():  # reset stop event if necessary
             api_layer.stop_event.clear()
 
         if startup:
@@ -159,7 +158,6 @@ class HandlerAll:
         api_layer.api_layer.start()
         logging.info(f"API layer '{api_identifier}' for '{protocol_identifier}' started")
         return Result[bool](passed=True, data=True, message=f"Api layer '{api_identifier}' in protocol '{protocol_identifier}' started")
-    
 
     def stop_api_layer(self, protocol_identifier: str, api_identifier: str) -> Result[bool]:
         protocol = next((item for item in self.__protocols if item.identifier == protocol_identifier), None)
@@ -175,7 +173,7 @@ class HandlerAll:
         
         logging.info(f"Stopping API layer '{api_identifier}' for '{protocol_identifier}'")
         api_layer.stop_event.set()
-        api_layer.api_layer.kill() # TODO zmenit ked bude async break loop dorobena v ApiLayerWebsocket
+        api_layer.api_layer.kill()  # TODO zmenit ked bude async break loop dorobena v ApiLayerWebsocket
         logging.info(f"API layer '{api_identifier}' for '{protocol_identifier}' stopped")
         return Result[bool](passed=True, data=True, message=f"Api layer '{api_identifier}' in protocol '{protocol_identifier}' stopped")
 
@@ -192,9 +190,8 @@ class HandlerAll:
                 self.stop_api_layer(wrapper.identifier, api_layer.identifier)
 
         return Result[bool](passed=True, data=True, message="All API layers stopped ")
-
     
-    def start_protocol_api_layers(self, protocol_identifier:str, startup: bool = False) -> Result[bool]:
+    def start_protocol_api_layers(self, protocol_identifier: str, startup: bool = False) -> Result[bool]:
         protocol = next((item for item in self.__protocols if item.identifier == protocol_identifier), None)
         if not protocol:
             return Result[bool](data=False, message=f"Protocol with identifier '{protocol_identifier}' not found!")
@@ -204,7 +201,7 @@ class HandlerAll:
         
         return Result[bool](passed=True, data=True, message=f"All API layers were started for protocol '{protocol_identifier}'")
     
-    def stop_protocol_api_layers(self, protocol_identifier:str) -> Result[bool]:
+    def stop_protocol_api_layers(self, protocol_identifier: str) -> Result[bool]:
         protocol = next((item for item in self.__protocols if item.identifier == protocol_identifier), None)
         if not protocol:
             return Result[bool](data=False, message=f"Protocol with identifier '{protocol_identifier}' not found!")
@@ -213,7 +210,6 @@ class HandlerAll:
             self.stop_api_layer(protocol_identifier, api_layer.identifier)
         
         return Result[bool](passed=True, data=True, message=f"All API layers were stopped for protocol '{protocol_identifier}'")
-
 
     def start_protocols(self, startup: bool = False) -> Result[bool]:
         started = 0
@@ -224,7 +220,6 @@ class HandlerAll:
 
         return Result[bool](passed=True, data=True, message=f"Started {started} protocols ({len(self.__protocols) - started} already running)")
 
-
     def stop_protocols(self) -> Result[bool]:
         stopped = 0
         for protocol in self.__protocols:
@@ -233,7 +228,6 @@ class HandlerAll:
                 stopped += 1
 
         return Result[bool](passed=True, data=True, message=f"Stopped {stopped} protocols ({len(self.__protocols) - stopped} were already off)")
-        
 
     def start_protocol(self, identifier: str, startup: bool = False) -> Result[bool]:
         protocol = next((item for item in self.__protocols if item.identifier == identifier), None)
@@ -249,13 +243,13 @@ class HandlerAll:
             return Result[bool](data=False, message=config.message, error=config.error)
         
         new_stop_event = Event()
-        new_manager = ManagerProtocol[protocol.handler_class, protocol.result_class](handler=protocol.handler_class, actions=protocol.actions, config=config.data, stop_event=new_stop_event, result_type=protocol.result_class, identifier=identifier)
+        new_manager = ManagerHandler[protocol.handler_class, protocol.result_class](handler=protocol.handler_class, actions=protocol.actions, config=config.data, stop_event=new_stop_event, result_type=protocol.result_class, identifier=identifier)
 
         protocol.stop_event = new_stop_event
         protocol.manager = new_manager
         protocol.config = config.data
 
-        if startup and not config.data.autostart: # if autostart is disabled for ptorocol
+        if startup and not config.data.autostart:  # if autostart is disabled for ptorocol
             return Result[bool](data=False, message=f"Not starting protocol '{identifier}' because autostart is disabled")
         else:
             protocol.running = True
@@ -263,7 +257,6 @@ class HandlerAll:
             self.start_protocol_api_layers(identifier, startup)
             return Result[bool](passed=True, data=True, message=f"Protocol '{identifier}' started successfuly")
 
-    
     def stop_protocol(self, identifier: str) -> Result[bool]:
         protocol = next((item for item in self.__protocols if item.identifier == identifier), None)
         if not protocol:
@@ -278,16 +271,15 @@ class HandlerAll:
             protocol.running = False
             self.stop_protocol_api_layers(identifier)
         return Result[bool](passed=True, data=True, message="Protocol stopped")
-    
-    
+
     def start(self) -> None:
         logging.info("Main handler started")
 
         # START PROTOCOLS MANAGERS
         conf_r = self.__manager_config.read()
         if conf_r.passed:
-            self.start_protocols(startup=True) # start all protocols (if autostart is on)
-            self.__prepare_api_layers() # prepare api layers before running them
+            self.start_protocols(startup=True)  # start all protocols (if autostart is on)
+            self.__prepare_api_layers()  # prepare api layers before running them
             self.start_api_layers(startup=True)
         else:
             logging.critical(conf_r.message)
@@ -298,7 +290,7 @@ class HandlerAll:
 
             # CHECK IF MESSAGE WAS RECEIVED
             if not message_r.passed:  
-                if not message_r.error: # if timeout occured
+                if not message_r.error:  # if timeout occured
                     continue
                 # when message is not json serializable or another unexpected error occured
                 self.__manager_zmq_rep.respond([message_r])
@@ -313,13 +305,11 @@ class HandlerAll:
         self.stop_protocols()
         logging.info("Main handler stopped")
 
-
     def stop(self) -> Result[bool]:
         self.__running = False
         return Result[bool](passed=True, data=True, message="Stop issued for main handler")
-    
 
-    def update_config(self, identifier: str, new_conf: dict[str, Any]) -> Result[bool]:
+    def update_config(self, identifier: str, new_conf: Dict[str, Any]) -> Result[bool]:
         protocol = next((item for item in self.__protocols if item.identifier == identifier), None)
         if not protocol:
             return Result[bool](data=False, message=f"Protocol with given identifier '{identifier}' not found!")
@@ -337,8 +327,7 @@ class HandlerAll:
 
         return Result[bool](passed=True, data=True, message=f"Protocol '{identifier}' configuration updated")
 
-    
-    def protocols_config(self) -> Result[dict[str, Any]]:
+    def protocols_config(self) -> Result[Dict[str, Any]]:
         info = dict()
 
         for protocol in self.__protocols:
@@ -346,14 +335,14 @@ class HandlerAll:
             if config.passed:
                 info[protocol.identifier] = config.data.__dict__
 
-        return Result[dict[str, Any]](passed=True, data=info, message="Protocols configurations")
+        return Result[Dict[str, Any]](passed=True, data=info, message="Protocols configurations")
     
-    def protocols_info(self) -> Result[dict[str, Any]]:
+    def protocols_info(self) -> Result[Dict[str, Any]]:
         info = dict()
 
         for protocol in self.__protocols:
             info.update(protocol.info())
 
-        return Result[dict[str, Any]](passed=True, data=info, message="Protocols Information")
+        return Result[Dict[str, Any]](passed=True, data=info, message="Protocols Information")
 
         
