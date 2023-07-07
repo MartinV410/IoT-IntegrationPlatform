@@ -20,6 +20,7 @@ class SerialPort:
         return self.__connect()
 
 
+
     def __connect(self) -> Result[bool]:
         """
         Connects to serial port that can send/receive messages throught bluetooth
@@ -77,6 +78,13 @@ class SerialPort:
         if not check.passed:
             return Result[str](passed=check.passed, data=check.message, message=check.message)
         return self.__read(read_func=self.__serial.readline, block=False)
+
+    def read_line(self) -> Result[str]:
+        #check = self.__force_connect()
+        check = self.__check_reconnect()
+        if not check.passed:
+            return Result[str](passed=check.passed, data=check.message, message=check.message)
+        return self.__read(read_func=self.__serial.readline, block=True)
 
     def read_all(self) -> Result[str]:
         check = self.__check_reconnect()

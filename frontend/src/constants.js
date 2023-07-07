@@ -1,9 +1,14 @@
-import {MdBluetoothSearching, MdCellTower} from "react-icons/md";
+import {MdBluetoothSearching, MdCellTower, MdOutlineBloodtype} from "react-icons/md";
 import {SiWire} from "react-icons/si";
 import {AiOutlineHome} from "react-icons/ai";
 import ProtocolPage from "./components/pages/ProtocolPage";
 import {GiFogLight} from "react-icons/gi";
 import Home from "./components/pages/Home";
+import DeepakPIO from "./components/pages/DeepakPIO";
+import {ImPower} from "react-icons/im";
+import {TbGps} from "react-icons/tb";
+import GPS from "./components/pages/GPS";
+import BloodSaturation from "./components/pages/BloodSaturation";
 
 export const ROUTES = [
     {
@@ -36,4 +41,22 @@ export const ROUTES = [
         icon: <GiFogLight className={"route-icon"} />,
         component: <ProtocolPage protocol={"DMX"} endpoint={"dmx/"}  text={"A standard for digital communication networks that are commonly used to control lighting and effects. It quickly became the primary method for linking controllers to dimmers and special effects devices such as fog machines and intelligent lights. "}/>
     },
+    {
+        path: "/deepak",
+        name: "DeepakPIO",
+        icon: <ImPower className={"route-icon"} />,
+        component: <DeepakPIO />
+    },
+    {
+        path: "/gps",
+        name: "GPS",
+        icon: <TbGps className={"route-icon"} />,
+        component: <GPS />
+    },
+    {
+        path: "/bloodsaturation",
+        name: "Blood Saturation",
+        icon: <MdOutlineBloodtype className={"router-icon"}/>,
+        component: <BloodSaturation />
+    }
 ]

@@ -89,6 +89,12 @@ a:hover{
 }
 
 /*CARDS*/
+.card-darkgray {
+	background-color: var(--dark);
+	color: white;
+	border-radius: 10px;
+	position: relative;
+}
 .card-gray {
 	background-color: var(--light-dark);
 	color: white;
@@ -333,4 +339,25 @@ a:hover{
 	width: 70%;
 	height: 2px;
 	background-color: var(--muted);
+}
+
+.fault-alert {
+	background-color: var(--danger);
+	width: fit-content;
+	border-radius: 5px;
+	font-size: 12px;
+	padding: 5px;
+	margin-right: 1rem;
+	float: left;
+}
+
+.border-muted-right {
+	border-right: 2px solid var(--muted);
+}
+.border-muted-left {
+	border-left: 2px solid var(--muted);
+}
+
+.graph-container {
+	height: 200px;
 }

@@ -5,15 +5,20 @@ from .protocol_handler_1wire import ProtocolHandler1Wire
 from .protocol_handler_bluetooth import ProtocolHandlerBluetooth
 from .protocol_handler_nbiot import ProtocolHandlerNBIoT
 from .protocol_handler_dmx import ProtocolHandlerDMX
+from .protocol_handler_max30102 import ProtocolHandlerMAX30102
+from .protocol_handler_neo_m8m import ProtocolHandlerNEO
+
 # ACTIONS
 from actions.actions_1wire import actions_1wire
 from actions.actions_bluetooth import actions_bluetooth
 from actions.actions_nbiot import actions_nbiot
 from actions.actions_dmx import actions_dmx
+from actions.actions_max30102 import actions_max30102
+from actions.actions_neo_m8m import actions_neo
 # RESULTS
-from utils import Result1Wire, ResultBluetooth, ResultNBIoT,ResultDMX, Result
+from utils import Result1Wire, ResultBluetooth, ResultNBIoT,ResultDMX, Result, ResultMAX30102, ResultNEO
 # CONFIGS
-from configs import Config1Wire, ConfigBluetooth, ConfigNBIoT, ConfigDMX, Config, ConfigControl
+from configs import Config1Wire, ConfigBluetooth, ConfigNBIoT, ConfigDMX, Config, ConfigControl, ConfigMAX30102, ConfigNEO
 # MANAGERS
 from managers.manager_config import ManagerConfig
 from managers.manager_handler import ManagerHandler
@@ -83,7 +88,7 @@ class HandlerWrapper:
 
 class HandlerAll:
     def __init__(self) -> None:
-        self.__manager_config = ManagerConfig("config.ini")
+        self.__manager_config = ManagerConfig("/home/pi/Desktop/IoT-IntegrationPlatform/iot-platform/config.ini")
 
         from actions.actions_handler_all import actions_handler  # To prevent circular import
         self.__manager_actions = ManagerActions(actions_handler, Result)
@@ -120,6 +125,20 @@ class HandlerAll:
                 actions=actions_dmx,
                 result_class=ResultDMX,
                 config_class=ConfigDMX
+            ),
+            HandlerWrapper(
+                identifier=Protocol.MAX30102.value,
+                handler_class=ProtocolHandlerMAX30102,
+                actions=actions_max30102,
+                result_class=ResultMAX30102,
+                config_class=ConfigMAX30102
+            ),
+            HandlerWrapper(
+                identifier=Protocol.NEO.value,
+                handler_class=ProtocolHandlerNEO,
+                actions=actions_neo,
+                result_class=ResultNEO,
+                config_class=ConfigNEO
             ),
         ]
 

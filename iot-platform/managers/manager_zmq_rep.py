@@ -1,4 +1,4 @@
-import zmq, json
+import zmq, json, logging
 from typing import Any, TypeVar, Generic
 from utils import Result
 

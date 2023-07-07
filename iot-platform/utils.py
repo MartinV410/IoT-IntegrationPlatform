@@ -12,6 +12,8 @@ class Protocol(Enum):
     NB_IOT = "NB-IoT"
     DMX = "DMX"
     RS_232 = "RS-232"
+    MAX30102 = "MAX30102"
+    NEO = "NEO"
 
 
 @dataclass
@@ -64,6 +66,21 @@ class ResultNBIoT(Result, Generic[T]):
 @dataclass
 class ResultDMX(Result, Generic[T]):
     protocol: Protocol = Protocol.DMX
+
+    def __post__init__(self, config: dict):
+        self.__init__(**config)
+
+
+@dataclass
+class ResultMAX30102(Result, Generic[T]):
+    protocol: Protocol = Protocol.MAX30102
+
+    def __post__init__(self, config: dict):
+        self.__init__(**config)
+
+@dataclass
+class ResultNEO(Result, Generic[T]):
+    protocol: Protocol = Protocol.NEO
 
     def __post__init__(self, config: dict):
         self.__init__(**config)

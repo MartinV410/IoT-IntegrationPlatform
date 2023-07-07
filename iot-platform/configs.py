@@ -41,4 +41,13 @@ class ConfigNBIoT(Config):
 class ConfigDMX(Config):
     serial_port: str
 
+@dataclass
+class ConfigMAX30102(Config):
+    address: int
+    channel: int
+    gpio_pin: int
+
+@dataclass
+class ConfigNEO(Config):
+    serial_port: str
 

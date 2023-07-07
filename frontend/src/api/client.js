@@ -18,7 +18,8 @@ function getCookie(name) {
 }
 const csrftoken = getCookie('csrftoken');
 
-export const server_ip = "192.168.88.209"
+export const server_ip = window.location.hostname
+// export const server_ip = "192.168.88.209"
 const addr = `http://${server_ip}:8000/`
 export const client = axios.create({
     baseURL: addr,

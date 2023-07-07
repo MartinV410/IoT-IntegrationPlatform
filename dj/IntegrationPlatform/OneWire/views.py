@@ -2,7 +2,7 @@ from IntegrationPlatform import utils
 
 
 def api_onewire(request, *args, **kwargs):
-    return utils.send_receive_req(request.body, "tcp://127.0.0.1:5010", 5000)
+    return utils.send_receive_req(request.body, "tcp://127.0.0.1:50010", 5000)
     # body = json.loads(request.body)
 
     # context = zmq.Context()

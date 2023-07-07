@@ -23,4 +23,6 @@ urlpatterns = [
     path('nbiot/', include("NBIoT.urls")),
     path('dmx/', include("dmx.urls")),
     path('control/', include("control.urls")),
+    path('neo/', include("neo.urls")),
+    path('max30102/', include("max30102.urls")),
 ]

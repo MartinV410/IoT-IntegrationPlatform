@@ -1,81 +1,7 @@
-import zmq, time, json
-
-
-start = time.time()
-
-# context = zmq.Context()
-# socket = context.socket(zmq.REQ)
-# print("connecting")
-# socket.connect("tcp://127.0.0.1:5001")
-# print("connected")
-
-# print("sending")
-# #socket.send_string("hello")
-# socket.send_string(json.dumps({"find_available": {}}))
-# print("waiting for response")
-# print(socket.recv().decode())
-
-# print(f"Response time from start: {round(time.time() - start, 4)}")
-
-
-# context = zmq.Context()
-# socket = context.socket(zmq.SUB)
-# socket.connect("tcp://127.0.0.1:5021")
-# socket.setsockopt_string(zmq.SUBSCRIBE, "")
-
-# while True:
-#     message = socket.recv()
-#     if message:
-#         print(f"Got: {message}")
-
-
-# import serial
-
-# import time
-
-# import string 
-# import pynmea2
-
-
-# stop = False
-# while not stop: 
-#     port="/dev/ttyAMA0"
-
-#     ser=serial.Serial(port,baudrate=9600,timeout=0.5)
-
-#     dataout =pynmea2.NMEAStreamReader()
-
-#     newdata=ser.readline()
-#     print(f"NEW: \n{newdata}")
-
-#     data = ""
-
-#     try:
-#         data = newdata.decode()
-#     except Exception as e:
-#         print(f"E: {e}")
-
-#     #print(newdata)
-
-#     if data[0:6]=='$GPRMC':
-
-#         print(f"RAW: \n {data}")
-#         newmsg=pynmea2.parse(data)
-#         print(f"PARSED: \n {newmsg}")
-
-#         lat=newmsg.latitude
-
-#         lng=newmsg.longitude
-
-#         gps="Latitude=" +str(lat) + "and Longitude=" +str(lng)
-
-#         print(gps)
-#         stop = True
-
-
 from typing import List, Dict
 from utils import ResultMAX30102
 # from .protocol_handler import ProtocolHandler
+from .handler import Handler
 from configs import ConfigMAX30102
 
 from time import sleep
@@ -117,18 +43,18 @@ REG_PART_ID = 0xFF
 MAX_BRIGHTNESS = 255
 
 
-class ProtocolHandlerMAX30102():
-    def __init__(self) -> None:
-        #super().__init__("MAX30102", config)
+class ProtocolHandlerMAX30102(Handler):
+    def __init__(self, config: ConfigMAX30102) -> None:
+        super().__init__("MAX30102", config)
 
     # by default, this assumes that physical pin 7 (GPIO 4) is used as interrupt
     # by default, this assumes that the device is at 0x57 on channel 1
     #def __init__(self, channel=1, address=0x57, gpio_pin=7):
         #print("Channel: {0}, address: {1}".format(channel, address))
         self.address = 0x57
-        self.channel = 1
+        self.channel = config.channel
         self.bus = SMBus(self.channel)
-        self.interrupt = 7
+        self.interrupt = config.gpio_pin
 
         # set gpio mode
         GPIO.setmode(GPIO.BOARD)
@@ -252,10 +178,3 @@ class ProtocolHandlerMAX30102():
             ir_buf.append(ir)
 
         return ResultMAX30102[dict](passed=True, data={"red": red_buf, "ir": ir_buf}, message="MAX30102 sequential data")
-
-
-t = ProtocolHandlerMAX30102()
-
-for i in range(5):
-    time.sleep(5)
-    print(t.read_fifo().data)
