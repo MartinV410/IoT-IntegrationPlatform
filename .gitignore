@@ -10,6 +10,7 @@
 /dj/IntegrationPlatform/OneWire/__pycache__
 /dj/IntegrationPlatform/IntegrationPlatform/__pycache__
 .idea
+/.vscode
 /dj/IntegrationPlatform/db.sqlite3
 venv
 /frontend/node_modules
